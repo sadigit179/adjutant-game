@@ -2585,7 +2585,12 @@ var API=(function(){try{if(window.claude&&window.claude.use)return null}catch(e)
   try{return /^https?:$/.test(location.protocol)&&!/(^|\.)claude\.ai$/.test(location.hostname)&&!/^(localhost|127\.)/.test(location.hostname)||/[?&]api=1/.test(location.search)?"/api/":null}catch(e){return null}})();
 function diaryPull(){if(!API)return;
   fetch(API+"diary",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(!j||!Array.isArray(j.entries))return;
-    DI.api=true;DI.shared={api:j.entries};if($("dimodal"))renderDiary()},function(){})}
+    DI.api=true;DI.shared={api:j.entries};if($("dimodal"))renderDiary();flushPending()},function(){})}
+function flushPending(){if(!API||DI.flushing)return;var p=DI.local.filter(function(x){return x&&x.pending});if(!p.length)return;DI.flushing=true;
+  var chain=Promise.resolve();p.forEach(function(x){chain=chain.then(function(){var b={n:x.n,c:x.c,txt:x.txt,t:x.t};
+    return fetch(API+"diary",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(b),cache:"no-store"}).then(function(r){if(r.ok){delete x.pending;x.sent=1}})})});
+  chain.catch(function(){}).then(function(){DI.flushing=false;DI.local=DI.local.filter(function(x){return !x.sent});try{localStorage.setItem("adj_diary",JSON.stringify(DI.local.slice(-50)))}catch(e){}
+    fetch(API+"diary",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&Array.isArray(j.entries)){DI.shared={api:j.entries};if($("dimodal"))renderDiary()}},function(){})})}
 var VIS=null;
 function showVisits(){var el=$("vcount");if(!el)return;
   if(VIS!=null&&VIS>1000){el.textContent="Total appointed Adjutants: "+String(VIS).replace(/\B(?=(\d{3})+(?!\d))/g,",");el.hidden=false}else el.hidden=true}
@@ -2610,8 +2615,8 @@ function diaryEntries(){
 function saveDiary(e){
   return new Promise(function(res){
     function local(){DI.local.push(e);try{localStorage.setItem("adj_diary",JSON.stringify(DI.local.slice(-50)))}catch(x){}res(false)}
-    if(API&&DI.api){fetch(API+"diary",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(e)}).then(function(r){
-        if(!r.ok)throw 0;(DI.shared.api=DI.shared.api||[]).push(e);res(true)}).catch(function(){local()});return}
+    if(API){fetch(API+"diary",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(e),cache:"no-store"}).then(function(r){
+        if(!r.ok)throw 0;DI.api=true;(DI.shared.api=DI.shared.api||[]).unshift(e);res(true)}).catch(function(){e.pending=1;local()});return}
     if(!(LB.db&&LB.uid&&LB.canWrite)){local();return}
     var ref=LB.db.doc("diary/"+LB.uid);
     LB.chain=LB.chain.then(function(){return ref.get()}).then(function(s){var en=(s.exists&&Array.isArray(s.data().entries))?s.data().entries.slice():[];en.push(e);if(en.length>100)en=en.slice(-100);return ref.set({entries:en})})
