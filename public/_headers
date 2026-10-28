@@ -1,0 +1,9 @@
+/admin*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/
+  Cache-Control: public, max-age=300
+
+/index.html
+  Cache-Control: public, max-age=300

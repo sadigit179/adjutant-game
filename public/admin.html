@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Adjutant · Developer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Hind+Siliguri:wght@400;600&display=swap">
+<style>
+:root{--ground:#13160f;--olive:#232a1b;--line:#46503a;--brass:#cfa94e;--mute:#aaa48d;--fg:#efe9d6;--bad:#e0735f;color-scheme:dark;
+  --f-bn:"Hind Siliguri","Noto Sans Bengali",system-ui,sans-serif;--f-stencil:"Black Ops One",Impact,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--fg);font:15px/1.55 var(--f-bn);padding:0 16px}
+.wrap{max-width:820px;margin:0 auto;padding:24px 0 60px;display:flex;flex-direction:column;gap:16px}
+h1{font:400 24px var(--f-stencil);letter-spacing:.12em;color:var(--brass);margin:0}
+.card{background:var(--olive);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input{flex:1;min-width:200px;background:var(--ground);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit}
+button{background:var(--brass);color:#1a1d12;border:0;border-radius:8px;padding:8px 14px;font:600 14px var(--f-bn);cursor:pointer}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+button.bad{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+.stat{font-size:28px;font-weight:600;color:var(--brass)}
+.muted{color:var(--mute);font-size:13px}
+.e{border-top:1px dashed var(--line);padding:10px 0;display:flex;flex-direction:column;gap:6px}
+.e.hid{opacity:.5}
+.e p{margin:0;white-space:pre-wrap;word-break:break-word}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ADJUTANT · DEVELOPER</h1>
+  <section class="card" id="login">
+    <p style="margin:0 0 8px">ডেভেলপার কী (Netlify-তে রাখা ADMIN_KEY) দিন।</p>
+    <div class="row"><input id="key" type="password" autocomplete="current-password" aria-label="Developer key"><button id="go" type="button">ঢুকুন</button></div>
+    <p class="muted" id="lmsg" role="status"></p>
+  </section>
+  <div id="panel" hidden style="display:flex;flex-direction:column;gap:16px">
+    <section class="card row" style="justify-content:space-between">
+      <div><div class="muted">মোট ভিজিট</div><div class="stat" id="vis">০</div><div class="muted">১০০০ পার হলে খেলায় দেখা যাবে</div></div>
+      <div class="row"><button class="ghost" id="reload" type="button">রিফ্রেশ</button><button class="ghost" id="out" type="button">বের হোন</button></div>
+    </section>
+    <section class="card"><div class="row" style="justify-content:space-between"><b>কলেজ ডায়েরি</b><span class="muted" id="cnt"></span></div><div id="list"></div></section>
+  </div>
+</div>
+<script>
+var KEY="";try{KEY=sessionStorage.getItem("adj_admin")||""}catch(e){}
+var $=function(i){return document.getElementById(i)};
+function bn(n){return String(n).replace(/[0-9]/g,function(d){return "০১২৩৪৫৬৭৮৯"[d]})}
+function call(method,body){return fetch("/api/admin",{method:method,headers:{"x-admin-key":KEY,"content-type":"application/json"},body:body?JSON.stringify(body):undefined,cache:"no-store"})
+  .then(function(r){if(r.status===401)throw new Error("key");if(!r.ok)throw new Error("err");return r.json()})}
+function render(entries){var L=$("list");L.innerHTML="";$("cnt").textContent=bn(entries.length)+"টি স্মৃতি";
+  entries.forEach(function(e){var d=document.createElement("article");d.className="e"+(e.hidden?" hid":"");
+    d.innerHTML='<div class="row" style="justify-content:space-between"><span><b></b> <span class="muted"></span></span><span class="row"><button class="ghost" data-a="hide" type="button"></button><button class="bad" data-a="del" type="button">মুছুন</button></span></div><p></p>';
+    d.querySelector("b").textContent=e.n||"অজানা";d.querySelector(".muted").textContent=e.c+" · "+new Date(e.t).toLocaleString();
+    d.querySelector("p").textContent=e.txt;var h=d.querySelector('[data-a="hide"]');h.textContent=e.hidden?"আবার দেখান":"লুকান";
+    h.addEventListener("click",function(){call("POST",{id:e.id,hidden:!e.hidden}).then(function(j){render(j.entries)})});
+    d.querySelector('[data-a="del"]').addEventListener("click",function(ev){var b=ev.currentTarget;if(b.dataset.sure){call("DELETE",{id:e.id}).then(function(j){render(j.entries)})}else{b.dataset.sure=1;b.textContent="নিশ্চিত? আবার চাপুন"}});
+    L.appendChild(d)})}
+function load(){call("GET").then(function(j){$("login").hidden=true;$("panel").hidden=false;$("vis").textContent=bn(j.visits);render(j.entries)},
+  function(e){$("login").hidden=false;$("panel").hidden=true;$("lmsg").textContent=e.message==="key"?"কী মেলেনি।":"সার্ভারে সমস্যা, পরে আবার চেষ্টা করুন।"})}
+$("go").addEventListener("click",function(){KEY=$("key").value.trim();try{sessionStorage.setItem("adj_admin",KEY)}catch(e){}load()});
+$("key").addEventListener("keydown",function(e){if(e.key==="Enter")$("go").click()});
+$("reload").addEventListener("click",load);
+$("out").addEventListener("click",function(){KEY="";try{sessionStorage.removeItem("adj_admin")}catch(e){}$("key").value="";$("panel").hidden=true;$("login").hidden=false});
+if(KEY)load();
+</script>
+</body>
+</html>
