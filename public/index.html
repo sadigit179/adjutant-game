@@ -437,7 +437,7 @@ body.locked{overflow:hidden}
 .pm-hint{margin:0;font-family:var(--f-bnserif);font-size:16px;line-height:1.6;color:#3b4a22;border-left:3px solid var(--brass);padding:4px 0 4px 12px}
 /* joint house-prefect session */
 .hpvisit{display:flex;flex-direction:column;gap:14px}
-.hpwho{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;text-align:center}
+.hpwho{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:12px;text-align:center}
 .hpw .ph{width:min(120px,26vw);aspect-ratio:1;max-width:100%;margin:0 auto;border-radius:50%;overflow:hidden;border:3px solid var(--brass);background:#cfc2a0;animation:pop .6s cubic-bezier(.2,1.4,.4,1) both}
 .hpw:nth-child(2) .ph{animation-delay:.12s}.hpw:nth-child(3) .ph{animation-delay:.24s}
 .hpw .ph svg{width:100%;height:100%;display:block}
@@ -529,11 +529,12 @@ body.locked{overflow:hidden}
 .ep-card::before{content:"";position:absolute;inset:0 0 auto;height:8px;border-radius:14px 14px 0 0;background:repeating-linear-gradient(90deg,var(--col) 0 22px,#c9b98d 22px 26px)}
 .ep-ph{width:150px;height:150px;margin:0 auto 10px;border-radius:50%;overflow:hidden;border:4px solid var(--brass);background:#cfc2a0;animation:pop .6s cubic-bezier(.2,1.4,.4,1) .15s both}
 .ep-ph svg{width:100%;height:100%;display:block}
-.ep-ph.sm{width:96px;height:96px;margin-bottom:6px}
+.ep-ph.sm{width:min(96px,100%);height:auto;aspect-ratio:1;margin-bottom:6px}
+.hpw:nth-child(4) .ph{animation-delay:.36s}
 .ep-name{font-family:var(--f-bnserif);font-size:24px;line-height:1.2}
 .ep-role{font-size:14px;color:#7a1720;margin-top:2px}
 .ep-say{font-family:var(--f-bnserif);font-size:18px;line-height:1.55;background:#f8f1dc;border:1px dashed #b8a77c;border-radius:10px;padding:10px 14px;margin:14px 0}
-.ep-trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:6px}
+.ep-trio{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:8px;margin-bottom:6px}
 .ep-trio b{display:block;font-family:var(--f-bnserif);font-size:15px;line-height:1.2}
 .ep-trio small{display:block;font-size:12px;color:var(--inkm)}
 .ep-trio+.ep-say,.ep-say+.ep-say{margin:6px 0;font-size:15px}
@@ -2057,7 +2058,7 @@ function makeQueue(){
   function cname(){var n;do{n=pick(g?CNAMES.g:CNAMES.b)}while(used[n]);used[n]=1;return n}
   var ORDER=["csm","ccp","cdp","cgp","hp","fm","mo","cp"];
   ORDER.map(function(id){return id==="hp"?HPV:VISITORS.filter(function(x){return x.id===id})[0]}).forEach(function(v){
-    if(v.id==="hp"){var hp={v:v,cadet:true,hs:c.houses.slice(0,3),names:[cname(),cname(),cname()].map(function(n){return "ক্যাডেট "+n}),skins:[pick(SKINS),pick(SKINS),pick(SKINS)],f:g};
+    if(v.id==="hp"){var hp={v:v,cadet:true,hs:c.houses.slice(),f:g};hp.names=hp.hs.map(function(){return "ক্যাডেট "+cname()});hp.skins=hp.hs.map(function(){return pick(SKINS)});
       hp.lines=hp.hs.map(function(h,k){return "আসসালামু আলাইকুম, স্যার! "+hp.names[k]+", হাউস প্রিফেক্ট, "+hshort(h)+", স্যার!"});q.push(hp);return}
     var o={v:v,cadet:v.cadet};
     if(v.kind==="cadet"){o.f=g;o.name="ক্যাডেট "+cname();o.no=bn(1000+Math.floor(Math.random()*8999));}
@@ -2143,17 +2144,17 @@ function effVisit(o,r){
   return{note:note,mark:mark,line:REPLY(v)};
 }
 function effHP(o,r){
-  var d={},note="",pts=[0,0,0],comb=0,surv=r.surv||[];
+  var d={},note="",pts=o.hs.map(function(){return 0}),comb=0,surv=r.surv||[];
   if(r.act==="ok"){
     HPCOMP.forEach(function(c){var ch=r.ch[c[0]];if(ch==="all"){comb++;return}pts[+ch]+=2;pts[+r.ru[c[0]]]+=1});
     surv.forEach(function(j){pts[j]-=1.5});
-    var order=[0,1,2].sort(function(x,y){return pts[y]-pts[x]}),gap=pts[order[0]]-pts[order[1]],spread=pts[order[0]]-pts[order[2]];
+    var order=pts.map(function(_,i){return i}).sort(function(x,y){return pts[y]-pts[x]}),gap=pts[order[0]]-pts[order[1]],spread=pts[order[0]]-pts[order[order.length-1]];
     addE(d,{M:3+comb,D:2+surv.length*2,S:2});if(surv.length)addE(d,{M:-surv.length*2});
     if(gap>=2||spread>=4){var fh=o.hs[order[0]];S.bias={house:fh[0],col:HOUSEHEX[fh[1]]};addE(d,{N:-Math.min(20,6+gap*3)});
-      note=hshort(fh)+"ের প্রতি আপনার পক্ষপাত বাকি দুই হাউসের প্রিফেক্টরা লক্ষ করেছে।";}
+      note=hshort(fh)+"ের প্রতি আপনার পক্ষপাত বাকি "+(o.hs.length===4?"তিন":"দুই")+" হাউসের প্রিফেক্টরা লক্ষ করেছে।";}
     else{S.bias=null;addE(d,{N:comb===3?6:4});note=comb===3?"তিনটি প্রতিযোগিতাতেই Combined Champion। সব হাউস খুশি।":"সিদ্ধান্তে কোনো হাউসের প্রতি পক্ষপাত দেখা যায়নি।";}
     S.approved+=4;
-  }else{addE(d,{D:5,M:-6,F:2});S.chok++;S.rejected+=4;S.bias=null;note="তিন হাউস প্রিফেক্ট একসাথে উল্টা ঘুরে দৌড়! হাউসগুলোতে আজ রাতে এটাই আলোচনার বিষয়।";}
+  }else{addE(d,{D:5,M:-6,F:2});S.chok++;S.rejected+=4;S.bias=null;note=(o.hs.length===4?"চার":"তিন")+" হাউস প্রিফেক্ট একসাথে উল্টা ঘুরে দৌড়! হাউসগুলোতে আজ রাতে এটাই আলোচনার বিষয়।";}
   put(d);S.log.push({id:"hp",act:r.act});
   return{note:note,mark:r.act==="ok"?"APPROVED":"উল্টা ঘোর, দৌড়ে চল",line:"ইয়েস স্যার! আসসালামু আলাইকুম, স্যার!"};
 }
@@ -2231,7 +2232,7 @@ function openVisit(o){if(o.v.id==="hp")visitHP(o);else if(o.v.id==="cp")visitCP(
 // The visitor steps in: a pop-up with face, name and greeting, then the demand board.
 function entryPop(o){
   var hp=o.v.id==="hp",who;
-  if(hp)who='<div class="ep-trio">'+o.hs.map(function(h,k){return '<div><div class="ep-ph sm">'+portrait({kind:"cadet",f:o.f,skin:o.skins[k],tint:college().tint,logo:logo(college().id),rank:"prefect",epcol:HOUSEHEX[h[1]]})+'</div><b>'+o.names[k]+'</b><small>'+hshort(h)+'</small></div>'}).join("")+'</div>'+
+  if(hp)who='<div class="ep-trio" style="--n:'+o.hs.length+'">'+o.hs.map(function(h,k){return '<div><div class="ep-ph sm">'+portrait({kind:"cadet",f:o.f,skin:o.skins[k],tint:college().tint,logo:logo(college().id),rank:"prefect",epcol:HOUSEHEX[h[1]]})+'</div><b>'+o.names[k]+'</b><small>'+hshort(h)+'</small></div>'}).join("")+'</div>'+
     o.lines.map(function(l){return '<p class="ep-say">“'+l+'”</p>'}).join("");
   else who='<div class="ep-ph">'+avatar(o)+'</div><div class="ep-name">'+o.name+'</div><div class="ep-role">'+roleLabel(o)+(roleSub(o)?' · '+roleSub(o):"")+'</div><p class="ep-say">“'+o.intro+'”</p>';
   var btn=o.v.id==="cp"?"মানদণ্ড নির্ধারণ করুন":"দাবিগুলো দেখুন";
@@ -2314,7 +2315,7 @@ function visitHP(o){
       '<div class="hpgrp"><span class="hpl">Champion</span>'+hb(c[0]+"_ch")+'<label class="hpopt comb"><input type="radio" name="'+c[0]+'_ch" value="all"><span>Combined Champion</span></label></div>'+
       '<div class="hpgrp ru"><span class="hpl">Runners-up</span>'+hb(c[0]+"_ru")+'</div></div>'}).join("");
   var sv='<div class="hprow"><div class="hpt">অতিরিক্ত নজরদারি</div><div class="hpgrp"><span class="hpl">যে হাউসে প্রয়োজন, টিক দিন</span>'+o.hs.map(function(h,j){return '<label class="hpopt"><input type="checkbox" name="surv" value="'+j+'"><span><i style="background:'+HC[h[1]]+'"></i>'+hbare(h)+'</span></label>'}).join("")+'</div></div>';
-  $("stage").innerHTML='<div class="hpvisit"><div class="hpwho">'+av+'</div>'+revisitNote()+
+  $("stage").innerHTML='<div class="hpvisit"><div class="hpwho" style="--n:'+o.hs.length+'">'+av+'</div>'+revisitNote()+
     '<div class="file" id="file"><h4>আন্তঃহাউস প্রতিযোগিতা ও তদারকি · প্রতিটি বিষয়ে সিদ্ধান্ত দিন</h4>'+rows+sv+
     '<div class="stamps"><button class="stampbtn" id="st-ok" type="button" disabled>APPROVE</button><button class="stampbtn chk" id="st-chk" type="button">উল্টা ঘোর, দৌড়ে চল</button></div></div><div id="after"></div></div>';
   var f=$("file");
