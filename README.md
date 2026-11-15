@@ -1,4 +1,4 @@
-# THE ADJUTANT — website (Cloudflare Pages)
+# THE ADJUTANT
 
 - `public/` — what players get: the game (`index.html`), the developer page (`admin.html`), the link picture (`og-image.jpg`), icons
 - `functions/` — the small server parts: College Diary, player count, developer tools
